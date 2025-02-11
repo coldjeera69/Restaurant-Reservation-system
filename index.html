@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Reservation System</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .reservation-table {
+            margin-bottom: 20px;
+        }
+        .seats-left {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 20px;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .modal.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Restaurant Reservation System</h2>
+        <div class="seats-left">Seats Left: <span id="seats-left-count">10</span></div>
+        <table class="table table-striped reservation-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Check-in Time</th>
+                    <th>Checkout Status</th>
+                    <th>Delete</th>
+                </tr>
+            </thead>
+            <tbody id="reservation-table-body">
+            </tbody>
+        </table>
+        <form id="reservation-form">
+            <div class="form-group">
+                <label for="guest-count">Guest Count:</label>
+                <input type="number" id="guest-count" required>
+            </div>
+            <div class="form-group">
+                <label for="name">Name:</label>
+                <input type="text" id="name" required>
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone:</label>
+                <input type="tel" id="phone" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Make Reservation</button>
+        </form>
+        <div class="modal" id="modal">
+            <p id="modal-message"></p>
+            <button class="btn btn-secondary" id="modal-close">Close</button>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+    <script>
+        let seatsLeft = 10;
+        let reservations = [];
+        const reservationTableBody = document.getElementById('reservation-table-body');
+        const seatsLeftCount = document.getElementById('seats-left-count');
+        const reservationForm = document.getElementById('reservation-form');
+        const modal = document.getElementById('modal');
+        const modalMessage = document.getElementById('modal-message');
+        const modalClose = document.getElementById('modal-close');
+
+        reservationForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const guestCount = parseInt(document.getElementById('guest-count').value);
+            const name = document.getElementById('name').value;
+            const phone = document.getElementById('phone').value;
+            const now = new Date().toLocaleTimeString();
+
+            if (guestCount > seatsLeft) {
+                showModal('Invalid guest count. Not enough seats available.');
+                return;
+            }
+
+            const reservation = {
+                name,
+                phone,
+                checkInTime: now,
+                checkoutStatus: 'Not Checked Out',
+                guestCount
+            };
+
+            reservations.push(reservation);
+            updateReservationTable();
+            seatsLeft -= guestCount;
+            seatsLeftCount.textContent = seatsLeft;
+            reservationForm.reset();
+        });
+
+        function updateReservationTable() {
+            reservationTableBody.innerHTML = '';
+            reservations.forEach((reservation, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${reservation.name}</td>
+                    <td>${reservation.phone}</td>
+                    <td>${reservation.checkInTime}</td>
+                    <td>${reservation.checkoutStatus} <button class="btn btn-link" onclick="checkout(${index})">Click to Checkout</button></td>
+                    <td><button class="btn btn-link" onclick="deleteReservation(${index})">Delete</button></td>
+                `;
+                reservationTableBody.appendChild(row);
+            });
+        }
+
+        function checkout(index) {
+            const now = new Date().toLocaleTimeString();
+            reservations[index].checkoutStatus = `Checked Out at ${now}`;
+            reservations[index].guestCount = 0;
+            updateReservationTable();
+            seatsLeft += reservations[index].guestCount;
+            seatsLeftCount.textContent = seatsLeft;
+        }
+
+        function deleteReservation(index) {
+            if (reservations[index].checkoutStatus === 'Not Checked Out') {
+                seatsLeft += reservations[index].guestCount;
+            }
+            reservations.splice(index, 1);
+            updateReservationTable();
+            seatsLeftCount.textContent = seatsLeft;
+        }
+
+        function showModal(message) {
+            modalMessage.textContent = message;
+            modal.classList.add('show');
+        }
+
+        modalClose.addEventListener('click', () => {
+            modal.classList.remove('show');
+        });
+    </script>
+</body>
+</html>
